@@ -47,7 +47,7 @@ pipeline {
                 withSonarQubeEnv('sonar-pro') {
 		mvn sonar:sonar \
   			-Dsonar.projectKey=mysonarscanner5 \
-  			-Dsonar.host.url=http://192.168.2.67:9000 \
+  			-Dsonar.host.url=192.168.2.67:9000 \
   			-Dsonar.login=fe66da68689a547fdd7fdfe9f7b9e12f8d3b43e7
                 }
 
