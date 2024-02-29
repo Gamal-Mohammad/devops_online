@@ -21,7 +21,7 @@ pipeline {
 
         stage('Build Docker Image'){
             steps {
-                sh 'docker build -t app_from_jenkins:v$BUILD_NUMBER'
+                sh 'docker build -t app_from_jenkins:v$BUILD_NUMBER .'
             }
             post {
                 success {
