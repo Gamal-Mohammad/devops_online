@@ -1,18 +1,13 @@
 pipeline {
 
     agent any
-/*
-        tools {
-        maven "maven"
-    }
-*/
     environment {
         registry = "gamalm2041/myapp_image"
         registryCredential = 'dockerhub'
     }
 
     stages{
-        stage('BUILD'){
+        stage('BUILD Artifact WAR File'){
             steps {
                 sh 'mvn clean install -DskipTests'
             }
@@ -24,35 +19,45 @@ pipeline {
             }
         }
 
-        stage('UNIT TEST'){
+        stage('Build Docker Image'){
             steps {
-                sh 'mvn test'
+                sh 'docker build -t app_from_jenkins:v$BUILD_NUMBER'
             }
-        }
-
-        stage('Building image') {
-            steps{
-              script {
-                dockerImage = docker.build registry + ":$BUILD_NUMBER"
-              }
-            }
-        }
-
-        stage('CODE ANALYSIS with SONARQUBE') {
-
-            environment {
-                scannerHome = tool 'mysonarscanner5'
-            }
-            steps {
-                withSonarQubeEnv('sonar-pro') {
-                mvn sonar:sonar \
-                        -Dsonar.projectKey=mysonarscanner5 \
-                        -Dsonar.host.url=http://192.168.2.67:9000 \
-                        -Dsonar.login=fe66da68689a547fdd7fdfe9f7b9e12f8d3b43e7
+            post {
+                success {
+                    echo 'Docker Image Successfully Built'
                 }
+            }
+        }
 
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+        stage('Test Docker Image') {
+            steps{
+              sh 'docker run -d --name lab$BUILD_NUMBER -p 7070:8080 app_from_jenkins:v$BUILD_NUMBER'
+            }
+            post {
+                success {
+                    echo 'Docker Container Successfully Test'
+                }
+            }
+        }
+
+        stage('Remove Container') {
+            steps{
+              sh 'docker rm -f lab$BUILD_NUMBER'
+            }
+            post {
+                success {
+                    echo 'Docker Container Successfully Removed'
+                }
+            }
+        }
+        stage('Deploy App On KuberNetes') {
+            steps{
+              sh 'kubectl apply -f kubernetes/*'
+            }
+            post {
+                success {
+                    echo 'App Successfully Deployed'
                 }
             }
         }
