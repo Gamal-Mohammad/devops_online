@@ -45,10 +45,10 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonar-pro') {
-		mvn sonar:sonar \
+			sh '''mvn sonar:sonar \
   			-Dsonar.projectKey=mysonarscanner5 \
   			-Dsonar.host.url=192.168.2.67:9000 \
-  			-Dsonar.login=fe66da68689a547fdd7fdfe9f7b9e12f8d3b43e7
+  			-Dsonar.login=fe66da68689a547fdd7fdfe9f7b9e12f8d3b43e7'''
                 }
 
                 timeout(time: 10, unit: 'MINUTES') {
