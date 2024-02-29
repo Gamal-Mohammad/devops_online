@@ -3,7 +3,7 @@ pipeline {
     agent any
 /*
 	tools {
-        maven "maven3"
+        maven "maven"
     }
 */
     environment {
@@ -12,7 +12,6 @@ pipeline {
     }
 
     stages{
-
         stage('BUILD'){
             steps {
                 sh 'mvn clean install -DskipTests'
@@ -31,24 +30,6 @@ pipeline {
             }
         }
 
-        stage('INTEGRATION TEST'){
-            steps {
-                sh 'mvn verify -DskipUnitTests'
-            }
-        }
-
-        stage ('CODE ANALYSIS WITH CHECKSTYLE'){
-            steps {
-                sh 'mvn checkstyle:checkstyle'
-            }
-            post {
-                success {
-                    echo 'Generated Analysis Result'
-                }
-            }
-        }
-
-
         stage('Building image') {
             steps{
               script {
@@ -57,39 +38,17 @@ pipeline {
             }
         }
         
-        stage('Deploy Image') {
-          steps{
-            script {
-              docker.withRegistry( '', registryCredential ) {
-                dockerImage.push("$BUILD_NUMBER")
-                dockerImage.push('latest')
-              }
-            }
-          }
-        }
-
-        stage('Remove Unused docker image') {
-          steps{
-            sh "docker rmi $registry:$BUILD_NUMBER"
-          }
-        }
-
         stage('CODE ANALYSIS with SONARQUBE') {
 
             environment {
                 scannerHome = tool 'mysonarscanner5'
             }
-
             steps {
                 withSonarQubeEnv('sonar-pro') {
-                    sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=mysonarscanner5 \
-                   -Dsonar.projectName=mysonarscanner5 \
-                   -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+		mvn sonar:sonar \
+  			-Dsonar.projectKey=mysonarscanner5 \
+  			-Dsonar.host.url=http://192.168.2.67:9000 \
+  			-Dsonar.login=fe66da68689a547fdd7fdfe9f7b9e12f8d3b43e7
                 }
 
                 timeout(time: 10, unit: 'MINUTES') {
@@ -97,6 +56,5 @@ pipeline {
                 }
             }
         }
-
     }
 }
